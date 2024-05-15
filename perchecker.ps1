@@ -4,6 +4,7 @@ param (
     [string]$t = "b",
     [string]$o = "t",
     [string]$f = "d",
+    [switch]$testing,
     [switch]$h
 )
 
@@ -37,6 +38,43 @@ function Test-PathValidity {
         return $false
     }
     return $true
+}
+
+# Get-Permissions
+function Get-Permissions {
+    param (
+        [string]$path,
+        [int]$depth = 0,
+        [string]$outputFormat
+    )
+
+    $result = @()
+
+    if ($depth -eq 0) {
+        $folders = Get-ChildItem -Path $path -Recurse
+    }
+    else {
+        $folders = Get-ChildItem -Path $path -Recurse -Depth $depth
+    }
+
+    foreach ($folder in $folders) {
+        if ($folder.PSIsContainer) {
+            $acl = Get-Acl -Path $folder.FullName
+            $permissionString = $acl.Access | ForEach-Object {
+                $_.IdentityReference.Value + "(" + $_.FileSystemRights + ")"
+            }
+            $result += "$($folder.Name) - $($permissionString -join ', ') - $($folder.FullName)`n"
+        }
+        else {
+            $acl = Get-Acl -Path $folder.FullName
+            $permissionString = $acl.Access | ForEach-Object {
+                $_.IdentityReference.Value + "(" + $_.FileSystemRights + ")"
+            }
+            $result += "$($folder.Name) - $($permissionString -join ', ') - $($folder.FullName)`n"
+        }
+    }
+
+    return $result
 }
 
 <#
@@ -98,8 +136,9 @@ Write-Host "Settings: -n $n -t $t -o $o -f $f"
 
 # 5. Run
 $confirm = Read-Host "Soll das Skript ausgefuehrt werden? (y/N)"
-if ($confirm -eq "y" -or $confirm -eq "Y") {
-    #funtionen :)
+if ($confirm -eq "y" -or $confirm -eq "Y" -or $testing) {
+    $permissions = Get-Permissions -path $currentPath -depth $n
+    Write-Host $permissions
 }
 else {
     exit
