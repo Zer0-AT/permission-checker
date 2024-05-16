@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param (
     [int]$n = 0,
-    [string]$t = "b",
+    [string]$t = "o",
     [string]$o = "t",
     [string]$f = "d",
     [switch]$testing,
@@ -13,7 +13,7 @@ param (
 #>
 $myinputs = "
     -n [int] Maximale tiefe der Ordnerstruktur 0=unlimited
-    -t [string] Typ: (o)rdner (d)atein (B)eides
+    -t [string] Typ: (O)rdner (d)atein (b)eides
     -o [string] Output: (T)xt (x)ml
     -f [string] Format: (D)irekt (g)ruppiert (b)eides
     -h diese Hilfe"
@@ -22,8 +22,8 @@ if ($h) {
     exit
 }
 if ($testing) {
-    $n = 2
-    $t = "b"
+    $n = 0
+    $t = "o"
     $o = "t"
     $f = "d"
 }
@@ -39,6 +39,9 @@ function Test-PathValidity {
     param (
         [string]$path
     )
+    if (-not $path) {
+        return $false
+    }
     if (-not (Test-Path -Path $path -PathType Container)) {
         Write-Host "Path not valid -" $path
         return $false
@@ -74,35 +77,43 @@ function Show-PathDialog {
 # Get-Permissions
 function Get-Permissions {
     param (
-        [string]$path,
+        [string]$runPath,
         [int]$depth = 0,
-        [string]$type
+        [string]$type,
+        [string]$format,
+        [string]$outPath
+
     )
 
     $result = @()
-
+    $date = Get-Date
+    $date = $date.ToString("yyMMdd-HHmm")
+    $outputFile = $outPath + "\perout_" + $date + ".txt"
     if ($depth -eq 0) {
-        $folders = Get-ChildItem -Path $path -Recurse
+        $folders = Get-ChildItem -Path $runPath -Recurse
     }
     else {
-        $folders = Get-ChildItem -Path $path -Recurse -Depth $depth
+        $folders = Get-ChildItem -Path $runPath -Recurse -Depth $depth
     }
-
+    New-Item -ItemType file -Path $outputFile -Force | Out-Null
     foreach ($folder in $folders) {
+        $result = @()
         if ($folder.PSIsContainer -and ($type -eq "o" -or $type -eq "b")) {
             $acl = Get-Acl -Path $folder.FullName
             $permissionString = $acl.Access | ForEach-Object {
                 $_.IdentityReference.Value + "(" + $_.FileSystemRights + ")"
             }
-            $result += "$($folder.Name) - $($permissionString -join ', ') - $($folder.FullName)`n"
+            $result = "$($folder.Name) - $($permissionString -join ', ') - $($folder.FullName)"
+            Write-Host "$($folder.Name) - $($permissionString -join ', ') - $($folder.FullName)"
         }
         elseif (-not $folder.PSIsContainer -and ($type -eq "d" -or $type -eq "b")) {
             $acl = Get-Acl -Path $folder.FullName
             $permissionString = $acl.Access | ForEach-Object {
                 $_.IdentityReference.Value + "(" + $_.FileSystemRights + ")"
             }
-            $result += "$($folder.Name) - $($permissionString -join ', ') - $($folder.FullName)`n"
+            $result = "$($folder.Name) - $($permissionString -join ', ') - $($folder.FullName)`n"
         }
+        $result | Out-File -FilePath $outputFile -Encoding UTF8 -Append
     }
 
     return $result
@@ -112,7 +123,7 @@ function Get-Permissions {
 function Save-Permissions {
     param (
         [string]$format = "t",
-        [string]$path,
+        [string]$runPath,
         [string]$permissions
     )
     $outputPath = $PSScriptRoot
@@ -152,7 +163,7 @@ $runHere = Read-Host "Soll das Skript hier ausgefuehrt werden? (Y/n/(g)ui)"
 if ($runHere -eq "" -or $runHere -eq "y" -or $runHere -eq "Y") {
     $currentPath = $PSScriptRoot
 }
-elseif ($runHere -eq "gui") {
+elseif ($runHere -eq "gui" -or $runHere -eq "g" -or $runHere -eq "G") {
     $currentPath = Show-PathDialog
 }
 else {
@@ -167,7 +178,7 @@ $resultHere = Read-Host "Ergebnis hier speichern? (Y/n/(g)ui)"
 if ($resultHere -eq "" -or $resultHere -eq "y" -or $resultHere -eq "Y") {
     $outputPath = $PSScriptRoot
 }
-elseif ($resultHere -eq "gui") {
+elseif ($resultHere -eq "gui" -or $resultHere -eq "g" -or $resultHere -eq "G") {
     $outputPath = Show-PathDialog
 }
 else {
@@ -194,10 +205,17 @@ Write-Host "Settings: -n $n -t $t -o $o -f $f"
 # 5. Run
 $confirm = Read-Host "Soll das Skript ausgefuehrt werden? (y/N)"
 if ($confirm -eq "y" -or $confirm -eq "Y" -or $testing) {
-    $permissions = Get-Permissions -path $currentPath -depth $n -type $t
+    $startTime = Get-Date
+
+    # Differenz berechnen
+
+    $permissions = Get-Permissions -runPath $currentPath -depth $n -type $t -format $o -outPath $outputPath
     #Write-Host $permissions
-    Save-Permissions -format $o -outputPath $outputPath -permissions $permissions
-    Write-Host "Fertig! Und wurde unter $outputFile $fileName gespeichert."
+    #Save-Permissions -format $o -outputPath $outputPath -permissions $permissions
+    $endTime = Get-Date
+    $executionTime = New-TimeSpan $startTime $endTime
+
+    Write-Host "`nFertig! Dauer: $executionTime `nWurde unter" $outputFile $fileName "gespeichert."
 }
 else {
     exit
