@@ -1,4 +1,5 @@
 {
     "files.autoSave": "onFocusChange",
-    "powershell.analyzeOpenDocumentsOnly": true
+    "powershell.analyzeOpenDocumentsOnly": true,
+    "powershell.codeFormatting.newLineAfterCloseBrace": false
 }

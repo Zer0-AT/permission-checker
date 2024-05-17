@@ -1,26 +1,62 @@
-$content1 = Get-Content -Path ".\testfiles\1.txt"
-$content2 = Get-Content -Path ".\testfiles\2.txt"
+﻿[CmdletBinding()]
+param (
+    
+)
 
-# Array erstellen
-$filter = @("baum", "ast", "ups")
-#$filter = @("ha")
+if ($DebugPreference) {
+    $DebugPreference = 'Continue'
+    Write-Debug "*DEEP VOCE* Epic-Debug-Modus activated`n"
+    $testingMode = $true
+} else { 
+    $testingMode = $false 
+}
+$startTime = Get-Date
+$outputFile = $PSScriptRoot + "\compout_" + $($startTime.ToString("yyMMdd-HHmm")) + ".txt"
+$diffCount = 0
 
-# Schleife durch alle Elemente des Arrays gehen
+# Files laden
+$content1 = Get-Content -Encoding UTF8 -Path ".\testfiles\1.txt"
+$content2 = Get-Content -Encoding UTF8 -Path ".\testfiles\2.txt"
+Write-Host "Files geladen"
+
+# Filter erstellen [WICHTG: Bei "\" immer 2 verwenden ^^]
+$filter = @(
+    "EMPL\\AdAdmins",
+    "EMPL\\SRVAdmins",
+    "EMPL\\Domänen-Admins"
+)
+Write-Debug "Filter: $filter"
+
+# Go Nuts
 foreach ($element in $filter) {
-    #Write-Host "$content1 ---- $element"
-
+    # Write-Debug "$content1 --1-- $element"
+    # Write-Debug "$content2 --2-- $element"
     $content1 = $content1 -replace "$element[^,\s]*([\s,])", ''
     $content2 = $content2 -replace "$element[^,\s]*([\s,])", ''
     $content1 = $content1 -replace ", -", ' -'
     $content2 = $content2 -replace ", -", ' -'
     $content1 = $content1 -replace "  ", ' '
     $content2 = $content2 -replace "  ", ' '
+    Write-Host "$element erfolgreich entfernt"
+}
+Write-Host "`n"
 
-}
-#Write-Host $content1
-#Compare-Object $content1 $content2
+# Vergleichen
 $differences = Compare-Object -ReferenceObject $content1 -DifferenceObject $content2 -PassThru
-#Write-Host "Anzahl Unterschiede: $($differences.Count)"
-for ($i = 2; $i -lt $differences.Count; $i++) {
-    Write-Host "Zeile" $($file1.IndexOf($differences[$i]) + 1)": $($differences[$i])"
+#Write-Debug "$($content1.IndexOf($differences[0]))"
+for ($i = 0; $i -lt $differences.Count; $i++) {
+    $result = @()
+    # Write-Debug $differences[$i]
+    #Write-Debug $($content1.IndexOf($differences[$i]) + 1)
+    if ($differences[$i] -ine "" -and $content1.IndexOf($differences[$i]) -ne -1) {
+        # Write-Host "Zeile" $($content1.IndexOf($differences[$i]) + 1)": $($differences[$i])"
+        $result = "Zeile $($content1.IndexOf($differences[$i]) + 1): $($differences[$i])"
+        #$result | Out-File -FilePath $outputFile -Encoding UTF8 -Append
+        Write-Host $result
+        $diffCount++
+    }
 }
+
+$endTime = Get-Date
+$executionTime = New-TimeSpan $startTime $endTime
+Write-Host "`n`nEs gab $diffCount Unterschiede`nDauer: $executionTime`nSpeicherort: $outputFile"
