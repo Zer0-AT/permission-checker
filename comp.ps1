@@ -44,14 +44,14 @@ Write-Host "`n"
 # Vergleichen
 $differences = Compare-Object -ReferenceObject $content1 -DifferenceObject $content2 -PassThru
 #Write-Debug "$($content1.IndexOf($differences[0]))"
+New-Item -ItemType file -Path $outputFile -Force | Out-Null
 for ($i = 0; $i -lt $differences.Count; $i++) {
     $result = @()
-    # Write-Debug $differences[$i]
+    #Write-Debug $differences[$i]
     #Write-Debug $($content1.IndexOf($differences[$i]) + 1)
     if ($differences[$i] -ine "" -and $content1.IndexOf($differences[$i]) -ne -1) {
-        # Write-Host "Zeile" $($content1.IndexOf($differences[$i]) + 1)": $($differences[$i])"
         $result = "Zeile $($content1.IndexOf($differences[$i]) + 1): $($differences[$i])"
-        #$result | Out-File -FilePath $outputFile -Encoding UTF8 -Append
+        $result | Out-File -FilePath $outputFile -Encoding UTF8 -Append
         Write-Host $result
         $diffCount++
     }
