@@ -118,8 +118,10 @@ function Get-Permissions {
 
     return $result
 }
-
-# Save-Permissions
+# EMPL\AdAdmins
+# EMPL\SRVAdmins
+# EMPL\Domänen-Admins
+# Save-Permissions - old
 function Save-Permissions {
     param (
         [string]$format = "t",

@@ -1,10 +1,26 @@
-$file1 = Get-Content -Path ".\testfiles\1.txt"
-$file2 = Get-Content -Path ".\testfiles\2.txt"
+$content1 = Get-Content -Path ".\testfiles\1.txt"
+$content2 = Get-Content -Path ".\testfiles\2.txt"
 
-#Compare-Object $file1 $file2
+# Array erstellen
+$filter = @("baum", "ast", "ups")
+#$filter = @("ha")
 
-$differences = Compare-Object -ReferenceObject $file1 -DifferenceObject $file2 -PassThru
+# Schleife durch alle Elemente des Arrays gehen
+foreach ($element in $filter) {
+    #Write-Host "$content1 ---- $element"
 
-for ($i = 1; $i -lt $differences.Count; $i++) {
-    Write-Host "Zeile $($file1.IndexOf($differences[$i]) + 1): $($differences[$i])"
+    $content1 = $content1 -replace "$element[^,\s]*([\s,])", ''
+    $content2 = $content2 -replace "$element[^,\s]*([\s,])", ''
+    $content1 = $content1 -replace ", -", ' -'
+    $content2 = $content2 -replace ", -", ' -'
+    $content1 = $content1 -replace "  ", ' '
+    $content2 = $content2 -replace "  ", ' '
+
+}
+#Write-Host $content1
+#Compare-Object $content1 $content2
+$differences = Compare-Object -ReferenceObject $content1 -DifferenceObject $content2 -PassThru
+#Write-Host "Anzahl Unterschiede: $($differences.Count)"
+for ($i = 2; $i -lt $differences.Count; $i++) {
+    Write-Host "Zeile" $($file1.IndexOf($differences[$i]) + 1)": $($differences[$i])"
 }
