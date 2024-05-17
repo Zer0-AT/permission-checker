@@ -1,7 +1,7 @@
 Known Bugs:
-- Location Picker not working with admin
-- Comp not showing right line num.
-
+- none
+Unknown Bugs:
+- I don't know ¯\_(ツ)_/¯
 Use (PS):
 - ./perchecker.ps1 [-args]\
     -n [int] Maximale tiefe der Ordnerstruktur 0=unlimited\
@@ -10,4 +10,7 @@ Use (PS):
     -f [string] Format: (D)irekt (g)ruppiert (b)eides\
     -h diese Hilfe"\
 - ./comp.ps1\
-  in working :)
+  output file location, filter and input file locations are hardcoded!\
+  RAM intense!\
+
+
