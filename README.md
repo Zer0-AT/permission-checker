@@ -1,5 +1,6 @@
 Known Bugs:
 - Location Picker not working with admin
+- Compare not showing line num.
 
 Use (PS):
 - perchecker:
